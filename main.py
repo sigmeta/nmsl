@@ -4,8 +4,9 @@ import pinyin
 import json
 import argparse
 
+MAX_LINES=100000
 
-def str2emoji(st, dct):
+def str2emoji(st, dct, dct_pinyin):
     rlist=[]
     wlist=jieba.cut(st)
     #print(wlist)
@@ -49,6 +50,26 @@ def str2emoji_deep(st, dct, dct_pinyin):
     res=''.join(rlist)
     return res
 
+def translate(func,inp,out,dct,dct_pinyin):
+    if inp:
+        rlist=[]
+        with open(inp,'r',encoding='utf8') as f:
+            for i,line in enumerate(f):
+                if i>=MAX_LINES:
+                    break
+                rlist.append(func(line.strip(),dct,dct_pinyin))
+        num_lines=len(rlist)
+        print(f"Translation done. {num_lines} lines totally")
+        with open(out,'w',encoding='utf8') as f:
+            f.write('\n'.join(rlist))
+    else:
+        while True:
+            s=input('input:')
+            if s=='':
+                break
+            e=func(s,dct,dct_pinyin)
+            print(e)
+
 def main():
     parser = argparse.ArgumentParser(description='Process args')
     parser.add_argument('-m', 
@@ -77,40 +98,10 @@ def main():
 
     # string to emoji, normal to abstract.
     if args.m=='s2e':
-        if args.i:
-            rlist=[]
-            with open(args.i,'r',encoding='utf8') as f:
-                for line in f:
-                    rlist.append(str2emoji(line.strip(),dct))
-            num_lines=len(rlist)
-            print(f"Translation done. {num_lines} lines totally")
-            with open(args.o,'w',encoding='utf8') as f:
-                f.write('\n'.join(rlist))
-        else:
-            while True:
-                s=input('input:')
-                if s=='':
-                    break
-                e=str2emoji(s,dct)
-                print(e)
+        translate(str2emoji,args.i,args.o,dct,dct_pinyin)
     # normal to abstract, deep
     elif args.m=='s2edeep':
-        if args.i:
-            rlist=[]
-            with open(args.i,'r',encoding='utf8') as f:
-                for line in f:
-                    rlist.append(str2emoji_deep(line.strip(),dct,dct_pinyin))
-            num_lines=len(rlist)
-            print(f"Translation done. {num_lines} lines totally")
-            with open(args.o,'w',encoding='utf8') as f:
-                f.write('\n'.join(rlist))
-        else:
-            while True:
-                s=input('input:')
-                if s=='':
-                    break
-                e=str2emoji_deep(s,dct,dct_pinyin)
-                print(e)
+        translate(str2emoji_deep,args.i,args.o,dct,dct_pinyin)
     elif args.m=='e2s':
         pass
     elif args.m=='e2sdeep':
