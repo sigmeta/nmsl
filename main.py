@@ -93,6 +93,30 @@ def main():
                     break
                 e=str2emoji(s,dct)
                 print(e)
+    # normal to abstract, deep
+    elif args.m=='s2edeep':
+        if args.i:
+            rlist=[]
+            with open(args.i,'r',encoding='utf8') as f:
+                for line in f:
+                    rlist.append(str2emoji_deep(line.strip(),dct,dct_pinyin))
+            num_lines=len(rlist)
+            print(f"Translation done. {num_lines} lines totally")
+            with open(args.o,'w',encoding='utf8') as f:
+                f.write('\n'.join(rlist))
+        else:
+            while True:
+                s=input('input:')
+                if s=='':
+                    break
+                e=str2emoji_deep(s,dct,dct_pinyin)
+                print(e)
+    elif args.m=='e2s':
+        pass
+    elif args.m=='e2sdeep':
+        pass
+    else:
+        print("Choose a mode from ['s2e', 's2edeep', 'e2s', 'e2sdeep']")
 
 
 if __name__=='__main__':
