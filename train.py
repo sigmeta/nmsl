@@ -38,7 +38,7 @@ def Opt():
 def main():
     opt=Opt()
     print(opt)
-    convert=TextConverter(opt.data_path,opt.vocab_path,max_vocab=MAX_VOCAB,min_freq=0)
+    convert=TextConverter(opt.vocab_path,max_vocab=MAX_VOCAB,min_freq=0)
     trainer=Trainer_Transformer(convert,opt)
     if opt.train:
         trainer.train()
