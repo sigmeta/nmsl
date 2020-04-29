@@ -2,7 +2,7 @@ import os
 
 
 class TextConverter(object):
-    def __init__(self, text_path, vocab_path, max_vocab=10000, min_freq=0):
+    def __init__(self, vocab_path, max_vocab=10000, min_freq=0):
         """Construct a text index converter.
         Args:
             text_path: txt file path.

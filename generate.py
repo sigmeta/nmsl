@@ -1,28 +1,42 @@
 import os
+import time
+import json
 
 
-MAX_LINES=100000
-MAX_VOCAB=1000000
+MAX_LINES=1000000
+MAX_VOCAB=10000
 
 def main():
-    src_path="data/train/out1.txt"
+    src_path="data/train/out2.txt"
     tgt_path="data/train/tieba.dialogues"
-    out_path="data/train/e2s"
+    dct_path="data/dict.json"
+    out_path="data/train/e2sdeep"
     if not os.path.exists(out_path):
         os.makedirs(out_path)
-    dct={}
+    vocab={}
     slist=[]
     tlist=[]
+    # add pairs in the dictionary
+    with open(dct_path,encoding='utf8') as f:
+        dct=json.loads(f.read())
+        for k in dct:
+            slist.append(dct[k])
+            tlist.append(k)
+            for c in k+dct[k]:
+                if c in vocab:
+                    vocab[c]+=1
+                else:
+                    vocab[c]=1
     with open(src_path,encoding='utf8') as f:
         for i,line in enumerate(f):
             if i>=MAX_LINES:
                 break
             txt=line.strip().replace('\t','').replace(' ','')
             for c in txt:
-                if c in dct:
-                    dct[c]+=1
+                if c in vocab:
+                    vocab[c]+=1
                 else:
-                    dct[c]=1
+                    vocab[c]=1
             slist.append(txt)
     with open(tgt_path,encoding='utf8') as f:
         for i,line in enumerate(f):
@@ -30,14 +44,14 @@ def main():
                 break
             txt=line.strip().replace('\t','').replace(' ','')
             for c in txt:
-                if c in dct:
-                    dct[c]+=1
+                if c in vocab:
+                    vocab[c]+=1
                 else:
-                    dct[c]=1
+                    vocab[c]=1
             tlist.append(txt)
     vocab_count_list = []
-    for word in dct:
-        vocab_count_list.append((word, dct[word]))
+    for word in vocab:
+        vocab_count_list.append((word, vocab[word]))
     vocab_count_list.sort(key=lambda x: x[0])
     vocab_count_list.sort(key=lambda x: x[1], reverse=True)
     if len(vocab_count_list) > MAX_VOCAB:
@@ -50,4 +64,7 @@ def main():
         f.write('\n'.join(rlist))
 
 if __name__=='__main__':
+    stime=time.time()
     main()
+    etime=time.time()
+    print(f"Generation cost {etime-stime} seconds.")

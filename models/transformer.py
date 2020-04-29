@@ -23,7 +23,7 @@ class PositionalEncoding(nn.Module):
         return self.dropout(x)
 
 
-class MyTransformer(Transformer):
+class MyTransformer(nn.Module):
     def __init__(self, d_model=512, nhead=8, num_encoder_layers=6, num_decoder_layers=6, 
                 dim_feedforward=2048, dropout=0.1, activation='relu', custom_encoder=None, custom_decoder=None,
                 vocab_size=5000):

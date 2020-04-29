@@ -1,5 +1,6 @@
 import numpy as np
 import copy
+import time
 import torch
 import torch.nn as nn
 from models.transformer import MyTransformer
@@ -8,37 +9,38 @@ from tqdm import tqdm,trange
 
 
 def get_dataset(text_path, arr_to_idx, src_max_len, tgt_max_len):
-    with open(text_path, 'r', encoding='utf8') as f:
-        text = f.read()
     src_list=[]
     tgt_list=[]
     label_list=[]
-    for t in text.strip().split('\n'):
-        src_raw,tgt_raw=t.split('\t')
-        src=arr_to_idx(src_raw)[:src_max_len]
-        tgt=arr_to_idx(tgt_raw)[:tgt_max_len-1]
-        label=copy.copy(tgt)
-        tgt=[1]+tgt
-        label.append(1)
-        while len(src)<src_max_len:
-            src.append(0)
-        while len(tgt)<tgt_max_len:
-            tgt.append(0)
-            label.append(0)
-        src_list.append(src)
-        tgt_list.append(tgt)
-        label_list.append(label)
+    stime=time.time()
+    with open(text_path, 'r', encoding='utf8') as f:   
+        for t in f:
+            src_raw,tgt_raw=t.strip().split('\t')
+            src=arr_to_idx(src_raw)[:src_max_len]
+            tgt=arr_to_idx(tgt_raw)[:tgt_max_len-1]
+            label=copy.copy(tgt)
+            tgt=[1]+tgt
+            label.append(1)
+            while len(src)<src_max_len:
+                src.append(0)
+            while len(tgt)<tgt_max_len:
+                tgt.append(0)
+                label.append(0)
+            src_list.append(src)
+            tgt_list.append(tgt)
+            label_list.append(label)
     src_tensor=torch.tensor(src_list)
     tgt_tensor=torch.tensor(tgt_list)
     src_padding=torch.eq(src_tensor,0)
     tgt_padding=torch.eq(tgt_tensor,0)
     label_tensor=torch.tensor(label_list)
-    print(src_tensor)
+    etime=time.time()
+    print(f"Loading data cost {etime-stime} seconds.")
     return TensorDataset(src_tensor,tgt_tensor,src_padding,tgt_padding,label_tensor)
 
 def get_data(convert,opt):
     dataset= get_dataset(opt.data_path, convert.text_to_arr, opt.src_max_len, opt.tgt_max_len)
-    return DataLoader(dataset, opt.batch_size, shuffle=True)
+    return DataLoader(dataset, opt.batch_size, shuffle=True, num_workers=4)
 
 class Trainer_Transformer(object):
     def __init__(self, convert, opt):
@@ -47,20 +49,25 @@ class Trainer_Transformer(object):
     
     def train(self):
         tgt_mask=torch.triu(torch.ones(self.config.tgt_max_len,self.config.tgt_max_len),1)
-        tgt_mask=tgt_mask.masked_fill(tgt_mask.byte(),value=torch.tensor(float('-inf')))
+        tgt_mask=tgt_mask.masked_fill(tgt_mask.bool(),value=torch.tensor(float('-inf')))
         model=MyTransformer(d_model=self.config.hidden_dims, nhead=self.config.num_heads, 
                             num_encoder_layers=self.config.num_encoder_layers, num_decoder_layers=self.config.num_decoder_layers, 
                             dim_feedforward=4*self.config.hidden_dims, dropout=self.config.dropout,vocab_size=self.convert.vocab_size)
+        total = sum([param.nelement() for param in model.parameters()])
+        print(total)
+        #print(model)
+        torch.save(model,self.config.output_path)
         if torch.cuda.is_available() and self.config.use_gpu:
             print("using gpu to accelerate")
             model=model.cuda()
             tgt_mask=tgt_mask.cuda()
         optimizer = torch.optim.Adam(model.parameters(), lr=self.config.lr)
-        criterion=nn.CrossEntropyLoss(ignore_index=0,size_average=True)
+        criterion=nn.CrossEntropyLoss(ignore_index=0,reduction='mean')
         training_data=get_data(self.convert,self.config)
         for epoch in range(self.config.num_epochs):
             print("epoch:",epoch)
             running_loss=0
+            running_loss_tmp=0
             updates=0
             for step,data in enumerate(training_data):
                 src,tgt,src_padding,tgt_padding,label=data
@@ -81,28 +88,30 @@ class Trainer_Transformer(object):
                 loss.backward()
                 optimizer.step()
                 running_loss+=loss.item()
+                running_loss_tmp+=loss.item()
                 updates+=1
                 #print(loss)
                 if step%100==0:
-                    print(f"Epoch: {epoch}, Step: {step}, Loss: {running_loss/updates}")
+                    print(f"Epoch: {epoch}, Step: {step}, Loss: {running_loss_tmp/100}")
+                    running_loss_tmp=0
             print("training loss:",running_loss/updates)
         torch.save(model.cpu(),self.config.output_path)
 
     def test(self):
         model=torch.load(self.config.output_path)
         model.eval()
-        model=model.cuda()
+        #model=model.cuda()
         src=torch.tensor(self.convert.text_to_arr(self.config.src_text))
-        src=src.cuda().unsqueeze(0)
+        src=src.unsqueeze(0)
         tgt_list=[1]
         for i in range(self.config.tgt_max_len):
             tgt=torch.tensor(tgt_list)
-            tgt=tgt.cuda().unsqueeze(0)
+            tgt=tgt.unsqueeze(0)
             out=model(src,tgt)
             if int(out.argmax(-1)[-1,0])==1:
                 break
             tgt_list.append(int(out.argmax(-1)[-1,0]))
-        print(self.convert.arr_to_text(tgt_list)[1:])
+        print(self.convert.arr_to_text(tgt_list[1:]))
 
     def predict(self):
         pass

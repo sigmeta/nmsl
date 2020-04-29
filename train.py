@@ -23,7 +23,7 @@ def Opt():
     # training params
     parser.add_argument('--train', action='store_true',default=False)
     parser.add_argument('--test', action='store_true',default=False)
-    parser.add_argument('--use_gpu', default=True)
+    parser.add_argument('--use_gpu', action='store_true')
     parser.add_argument('--num_epochs', type=int, default=20)
     parser.add_argument('--batch_size', type=int, default=64)
     parser.add_argument('--lr', type=float, default=1e-3)
@@ -37,6 +37,7 @@ def Opt():
 
 def main():
     opt=Opt()
+    print(opt)
     convert=TextConverter(opt.data_path,opt.vocab_path,max_vocab=MAX_VOCAB,min_freq=0)
     trainer=Trainer_Transformer(convert,opt)
     if opt.train:

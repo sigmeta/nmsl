@@ -3,3 +3,4 @@
 # Jupyter notebook test
 jupyter/
 data/train
+.ps1
