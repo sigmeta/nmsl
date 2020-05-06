@@ -1,4 +1,3 @@
-import pandas as pd
 import jieba
 import pinyin
 import json
