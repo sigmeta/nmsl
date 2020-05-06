@@ -34,4 +34,4 @@ python gui.py
 
 ## 界面示例：
 
-![gui](https://github.com/sigmeta/nmsl/raw/master/data/gui.png)
+![gui](data/gui.png)
