@@ -5,6 +5,6 @@ Pillow==7.1.2
 pinyin==0.4.0
 PyQt5==5.14.2
 PyQt5-sip==12.7.2
-PyYAML==5.3.1
+PyYAML==5.4
 torch==1.4.0+cpu
 torchvision==0.6.0+cpu
