@@ -1,7 +1,7 @@
 future==0.18.2
 jieba==0.42.1
 numpy==1.18.4
-Pillow==7.1.2
+Pillow==9.0.1
 pinyin==0.4.0
 PyQt5==5.14.2
 PyQt5-sip==12.7.2
